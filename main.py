@@ -53,6 +53,8 @@ class inputnode:
     self.type = "inputnode"
 
 class hiddenlayernode:
+  position = 0
+
   def __init__(self, layer, position):
 
     self.layer = layer #is set to the hidden layer that the neuron is located in
@@ -79,7 +81,6 @@ def init():
   hiddenlayer = [] #holds all iterations of the hiddenlayernode class
   outputlayer = [] #holds all iterations of the outputnode class
 
-
   for i in inputs_array: inputs.append(inputnode(i)) #creates all input neurons as an instance of the inputnode class and adds them to a list
 
   for x in range(hiddenlayers):
@@ -88,26 +89,26 @@ def init():
 
   for i in range(10): #getting all digits 1-10
     outputlayer.append(outputnode(i))
-def matrixmultiply(layer, hiddenlayer):
-  weights_temp = []
-  final_values = []
-  bias = []
 
+def matrixMultiply(layer, hiddenlayer):
+
+  previous_values = []
+  final_values = []
+  weights = np.array([0 for i in range(len(hiddenlayer))])
+  bias = np.array([0 for i in range(len(hiddenlayer))])
 
   for node in hiddenlayer:
     if node.layer == layer:
-      weights_temp.append(node.weight[]) #haven't finished this line
-  for node in hiddenlayer:
+      weights[node.position] = node.weights
+      previous_values.append(node.value)
+
     if node.layer == layer+1:
-      bias.append(node.bias)
+      bias[node.position] = node.bias #gets the bias from the hiddenlayer that we are trying to get the values for
 
-  inputs = np.array([inputlayer[i].value for i in range(len(inputlayer))])
-  weights = np.array(weights_temp)
-  bias = np.array(bias)
 
-  bias = np.reshape(bias, (20, 1))  # reshapes everything so that its ready for matrix multiplication
+  # reshapes everything so that its ready for matrix multiplication
   weights = np.reshape(weights, (20, 1024))
-  inputs = np.reshape(inputs, (1024, 1))
+  previous_values = np.reshape(inputs, (1024, 1))
 
   values = np.matmul(weights, inputs)  # columns(1) must equal rows(2)
   values = np.add(values, bias)
@@ -146,14 +147,8 @@ def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
   for x, i in enumerate(final_values):
     hiddenlayer[x].value = i
 
-  for i in range(hiddenlayers):
+  #for i in range(hiddenlayers):
     #matrixmultiply(layer)
-
-
-
-
-
-
 
 
 
@@ -176,4 +171,3 @@ neuralnetwork(inputs, hiddenlayer, outputlayer)
 
 
 print("code took: ", time.time() - start_time, "seconds to run")
-
