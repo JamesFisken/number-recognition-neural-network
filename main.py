@@ -92,20 +92,23 @@ def init():
 
 def matrixMultiply(layer, hiddenlayer):
 
-  previous_values = []
+  previous_values = np.array([0.0 for i in range(round((len(hiddenlayer))/hiddenlayers))])
   final_values = []
-  weights = np.array([0 for i in range(len(hiddenlayer))])
+  weights = np.array([[0 for i in range(hiddenlayer_size)] for i in range(round((len(hiddenlayer))/hiddenlayers))])
   bias = np.array([0 for i in range(len(hiddenlayer))])
+
 
   for node in hiddenlayer:
     if node.layer == layer:
-      weights[node.position] = node.weights
-      previous_values.append(node.value)
+      weights[node.position] = node.weight #this needs to be node.weight
+
+      previous_values[node.position] = node.value
+
 
     if node.layer == layer+1:
       bias[node.position] = node.bias #gets the bias from the hiddenlayer that we are trying to get the values for
 
-
+  print("weights: ",previous_values)
   # reshapes everything so that its ready for matrix multiplication
   weights = np.reshape(weights, (20, 1024))
   previous_values = np.reshape(inputs, (1024, 1))
@@ -147,8 +150,8 @@ def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
   for x, i in enumerate(final_values):
     hiddenlayer[x].value = i
 
-  #for i in range(hiddenlayers):
-    #matrixmultiply(layer)
+  for i in range(hiddenlayers):
+    matrixMultiply(layer, hiddenlayer)
 
 
 
