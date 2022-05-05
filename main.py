@@ -38,7 +38,7 @@ def display_img(pixels):
 pixels = get_image_rgb("images/", "2.png", 32)
 inputs_array = np.array(pixels)
 
-hiddenlayer_size = 20  # size of a hidden layer
+hiddenlayer_size = 10  # size of a hidden layer
 hiddenlayers = 5  # amount of hidden layers
 
 
@@ -55,11 +55,12 @@ class inputnode:
 class hiddenlayernode:
     position = 0
 
-    def __init__(self, layer, position):
+    def __init__(self, layer, position, nextweights):
         self.layer = layer  # is set to the hidden layer that the neuron is located in
         self.position = position  # is set to the position of a neuron in a dedicated layer
+        self.nextweights = nextweights
 
-        self.weight = [round(random.uniform(-0.5, 0.5), 2) for i in range(hiddenlayer_size)]
+        self.weight = [round(random.uniform(-0.5, 0.5), 2) for i in range(nextweights)]
         self.bias = round(random.uniform(-0.5, 0.5), 2)
 
         self.value = 0  # math will determine this
@@ -86,7 +87,14 @@ def init():
 
     for x in range(hiddenlayers):
         for y in range(hiddenlayer_size):
-            hiddenlayer.append(hiddenlayernode(x, y))
+            hiddenlayer.append(hiddenlayernode(x, y, hiddenlayer_size))
+
+    for y in range(hiddenlayer_size):
+        print(y)
+        hiddenlayer.append(hiddenlayernode(5, y, hiddenlayer_size)) #prepares a hiddenlayer that only gives out 10 weights for the
+
+
+
 
     for i in range(10):  # getting all digits 1-10
         outputlayer.append(outputnode(i))
@@ -99,22 +107,24 @@ def matrixMultiply(layer, hiddenlayer):
     final_values = []
     ordered_weights = []
     weights = np.array(
-        [[0.0 for i in range(hiddenlayer_size)] for i in range(round((len(hiddenlayer)) / hiddenlayers))])
+        [[0.0 for i in range(hiddenlayer_size)] for i in range(round((len(hiddenlayer)) / hiddenlayers+1))]) #error is to do with the layer we add
     bias = np.array([0.0 for i in range(round((len(hiddenlayer)) / hiddenlayers))])
 
     for node in hiddenlayer:
         if node.layer == layer:
             weights[node.position] = node.weight  # this needs to be node.weight
+            print(node.layer)
             previous_values[node.position] = node.value
 
         if node.layer == layer + 1:
             bias[node.position] = node.bias
 
-    print(previous_values)
+    print("len of weights: ", len(weights))
 
     for y in range(len(weights)):
         for x in range(len(weights)):
-            ordered_weights.append(weights[x][y])
+                ordered_weights.append(weights[x][y])
+
 
 
     weights = np.array(ordered_weights)
@@ -149,12 +159,13 @@ def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
         if node.layer == layer:
             bias.append(node.bias)
 
+
     inputs = np.array([inputlayer[i].value for i in range(len(inputlayer))])
     weights = np.array(weights_temp)
     bias = np.array(bias)
 
-    bias = np.reshape(bias, (20, 1))  # reshapes everything so that its ready for matrix multiplication
-    weights = np.reshape(weights, (20, 1024))
+    bias = np.reshape(bias, (hiddenlayer_size, 1))  # reshapes everything so that its ready for matrix multiplication
+    weights = np.reshape(weights, (hiddenlayer_size, 1024))
     inputs = np.reshape(inputs, (1024, 1))
 
     values = np.matmul(weights, inputs)  # columns(1) must equal rows(2)
