@@ -182,44 +182,16 @@ def getcost(actual_node, expected_value):
     return running_total
 
 
-
-
 def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
-    layer = 0
-    weights_temp = []
-    final_values = []
+    #code goes here
+    rel_hiddenlayer = []
+    for node  in hiddenlayer:
+        if
+    input_values = np.array([inputlayer[a].value for a, i in enumerate(inputlayer)]) #creates an array with all the input layer values
+    weights = np([0.0 for i in range(len())])
 
-    bias = []
-    last_hiddenlayer = []
-    print(len(hiddenlayer))
-
-    for x in range(len(inputlayer)):
-        for y in range(len(inputlayer[x].weight)):
-            weights_temp.append(inputlayer[x].weight[y])
-    for node in hiddenlayer:
-        if node.layer == layer:
-            bias.append(node.bias)
-
-
-    inputs = np.array([inputlayer[i].value for i in range(len(inputlayer))])
-    weights = np.array(weights_temp)
-    bias = np.array(bias)
-
-    bias = np.reshape(bias, (hiddenlayer_size, 1))  # reshapes everything so that its ready for matrix multiplication
-    weights = np.reshape(weights, (hiddenlayer_size, 1024))
-    inputs = np.reshape(inputs, (1024, 1))
-
-    values = np.matmul(weights, inputs)  # columns(1) must equal rows(2)
-    values = np.add(values, bias)
-    for x in values:
-        final_values.append(sigmoid(x))
-
-
-    for x, i in enumerate(final_values):
-        hiddenlayer[x].value = i
-
-    for x in hiddenlayer:
-        print(x.value)
+    print(input_values)
+    print(len(input_values))
 
     for i in range(hiddenlayers): #might need to be changed
 
