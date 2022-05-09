@@ -36,7 +36,7 @@ def display_img(pixels):
 # neural network starts here
 
 
-hiddenlayer_size = 11  # size of a hidden layer
+hiddenlayer_size = 15  # size of a hidden layer
 hiddenlayers = 3  # amount of hidden layers
 
 
@@ -181,20 +181,36 @@ def getcost(actual_node, expected_value):
             running_total += (i - 0)**2
     return running_total
 
+def new_matrix_multiMultiply(value, weights, bias):
+    final_values = []
+    values = np.dot(weights, value)  # columns(1) must equal rows(2)
+    values = np.add(values, bias)
+    for i in values:
+        final_values.append(sigmoid(i))
+    print(final_values)
+    return final_values
+
 
 def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
-    #code goes here
-    rel_hiddenlayer = []
-    for node  in hiddenlayer:
-        if
-    input_values = np.array([inputlayer[a].value for a, i in enumerate(inputlayer)]) #creates an array with all the input layer values
-    weights = np([0.0 for i in range(len())])
+    layer = 0
+    bias = np.array([hiddenlayer[i].bias for i in range(hiddenlayer_size)])
+    input_values = np.array(
+        [inputlayer[i].value for i, a in enumerate(inputlayer)])  # creates an array with all the input layer values
 
-    print(input_values)
-    print(len(input_values))
+    temp_weights = np.array(
+        [inputlayer[i].weight for i, a in enumerate(inputlayer)])
 
+    weights = []
+    for x in range(hiddenlayer_size):
+        for y in range(1024):
+            weights.append(temp_weights[y][x])
+    weights = np.reshape(weights, (hiddenlayer_size, 1024))
+    all_values = new_matrix_multiMultiply(input_values, weights, bias)
+
+
+    print(all_values)
     for i in range(hiddenlayers): #might need to be changed
-
+        
         matrixMultiply(layer, hiddenlayer, False)
         layer += 1
         print("")
@@ -220,7 +236,7 @@ pixels = get_image_rgb("images/", file, 32)
 inputs_array = np.array(pixels)
 
 init(1)
-for x in range(2):
+for x in range(1):
 
     inputs = []
     number = x
@@ -230,7 +246,7 @@ for x in range(2):
     inputs_array = np.array(pixels)
 
     for i in inputs_array:
-        inputs.append(inputnode(i, 0)) #something wrong here
+        inputs.append(inputnode(i, 0.2))
 
 
 
