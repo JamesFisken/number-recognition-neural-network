@@ -44,8 +44,7 @@ class inputnode:
     def __init__(self, value, variability):
         self.variability = variability
 
-
-        self.weight = [round(random.uniform(self.variability*-1, self.variability), 2) for i in range(
+        self.weight = [round(random.uniform(self.variability * -1, self.variability), 2) for i in range(
             hiddenlayer_size)]  # sets a random weight(-1.00, 1.00) for all the synapses spreading out from the input node
 
         self.value = value
@@ -63,8 +62,8 @@ class hiddenlayernode:
         self.position = position  # is set to the position of a neuron in a dedicated layer
         self.nextweights = nextweights
 
-        self.weight = [round(random.uniform(self.variability*-1, self.variability), 2) for i in range(nextweights)]
-        self.bias = round(random.uniform(self.variability*-1, self.variability), 2)
+        self.weight = [round(random.uniform(self.variability * -1, self.variability), 2) for i in range(nextweights)]
+        self.bias = round(random.uniform(self.variability * -1, self.variability), 2)
 
         self.value = 0  # math will determine this
 
@@ -93,8 +92,8 @@ def init(cost):
             hiddenlayer.append(hiddenlayernode(x, y, hiddenlayer_size, cost))
 
     for y in range(hiddenlayer_size):
-        hiddenlayer.append(hiddenlayernode(hiddenlayers, y, 10, cost)) #prepares a hiddenlayer that only gives out 10 weights for the
-
+        hiddenlayer.append(
+            hiddenlayernode(hiddenlayers, y, 10, cost))  # prepares a hiddenlayer that only gives out 10 weights for the
 
     for i in range(10):  # getting all digits 1-10
         outputlayer.append(outputnode(i))
@@ -123,21 +122,21 @@ def lastlayer(hiddenlayer_values, hiddenlayer_weights):
         print("final_values", x.value)
 
 
-
 def matrixMultiply(layer, hiddenlayer, lastlayer):
-    previous_values = np.array([0.0 for i in range(round((len(hiddenlayer)-hiddenlayer_size) / hiddenlayers))])
+    previous_values = np.array([0.0 for i in range(round((len(hiddenlayer) - hiddenlayer_size) / hiddenlayers))])
 
     final_values = []
     ordered_weights = []
 
     if lastlayer == False:
         weights = np.array(
-            [[0.0 for i in range(hiddenlayer_size)] for i in range(round((len(hiddenlayer)-hiddenlayer_size) / hiddenlayers))])
+            [[0.0 for i in range(hiddenlayer_size)] for i in
+             range(round((len(hiddenlayer) - hiddenlayer_size) / hiddenlayers))])
     else:
         weights = np.array(
             [[0.0 for i in range(10)] for i in range(20)])
 
-    bias = np.array([0.0 for i in range(round((len(hiddenlayer)-hiddenlayer_size) / hiddenlayers))])
+    bias = np.array([0.0 for i in range(round((len(hiddenlayer) - hiddenlayer_size) / hiddenlayers))])
 
     for node in hiddenlayer:
         if node.layer == layer:
@@ -152,7 +151,7 @@ def matrixMultiply(layer, hiddenlayer, lastlayer):
 
     for y in range(len(weights)):
         for x in range(len(weights)):
-                ordered_weights.append(weights[x][y])
+            ordered_weights.append(weights[x][y])
 
     weights = np.array(ordered_weights)
     weights = np.reshape(weights, (hiddenlayer_size, hiddenlayer_size))
@@ -164,11 +163,12 @@ def matrixMultiply(layer, hiddenlayer, lastlayer):
 
     i = 0
     for node in hiddenlayer:
-        if node.layer == layer+1:
-
+        if node.layer == layer + 1:
             node.value = final_values[i]
             i += 1
     # reshapes everything so that its ready for matrix multiplication
+
+
 def getcost(actual_node, expected_value):
     running_total = 0
     actual_values = []
@@ -176,10 +176,11 @@ def getcost(actual_node, expected_value):
         actual_values.append(node.value)
     for a, i in enumerate(actual_values):
         if a == expected_value:
-            running_total += (i - 1)**2
+            running_total += (i - 1) ** 2
         else:
-            running_total += (i - 0)**2
+            running_total += (i - 0) ** 2
     return running_total
+
 
 def new_matrix_multiMultiply(value, weights, bias):
     final_values = []
@@ -189,6 +190,16 @@ def new_matrix_multiMultiply(value, weights, bias):
         final_values.append(sigmoid(i))
     print(final_values)
     return final_values
+
+def setuparrays(layer, num_of_next_weights):
+    bias = np.array([0.0 for i in range(num_of_next_weights)])
+    values = np.array[0.0 for i in range(hiddenlayer_size)]
+    weights = np.array([hiddenlayer[i].value for i, a in enumerate(hiddenlayer)]) #ended here
+
+    for node in hiddenlayer:
+        if node.layer == layer:
+            values[node.position] = node.value
+
 
 
 def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
@@ -206,20 +217,18 @@ def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
             weights.append(temp_weights[y][x])
     weights = np.reshape(weights, (hiddenlayer_size, 1024))
     all_values = new_matrix_multiMultiply(input_values, weights, bias)
-
-
     print(all_values)
-    for i in range(hiddenlayers): #might need to be changed
-        
-        matrixMultiply(layer, hiddenlayer, False)
+
+
+    for i in range(hiddenlayers):
         layer += 1
-        print("")
-        for x in hiddenlayer:
-            print(x.value)
+        setuparrays(layer)
+
+
 
     for x in hiddenlayer:
         if len(x.weight) == 10:
-            last_hiddenlayer.append(x) #last hidden layer
+            last_hiddenlayer.append(x)  # last hidden layer
 
     weights = []
     values = []
@@ -248,14 +257,11 @@ for x in range(1):
     for i in inputs_array:
         inputs.append(inputnode(i, 0.2))
 
-
-
     for x in range(len(hiddenlayer)):
         hiddenlayer[x].value = 0
     neuralnetwork(inputs, hiddenlayer, outputlayer)
 
     cost = getcost(outputlayer, number)
     print(cost)
-
 
 print("code took: ", time.time() - start_time, "seconds to run")
