@@ -99,27 +99,7 @@ def init(cost):
         outputlayer.append(outputnode(i))
 
 
-def lastlayer(hiddenlayer_values, hiddenlayer_weights):
-    weights = []
-    final_values = []
-    hiddenlayer_weights = np.array(hiddenlayer_weights)
-    hiddenlayer_weights = np.reshape(hiddenlayer_weights, (hiddenlayer_size, 10))
 
-    for x in range(10):
-        for y in range(len(hiddenlayer_weights)):
-            weights.append(hiddenlayer_weights[y][x])
-    hiddenlayer_weights = np.reshape(weights, (10, hiddenlayer_size))
-
-    values = np.reshape(hiddenlayer_values, (hiddenlayer_size, 1))
-    values = np.dot(hiddenlayer_weights, hiddenlayer_values)
-    for i in values:
-        final_values.append(sigmoid(i))
-
-    for a, node in enumerate(outputlayer):
-        if node.number == a:
-            outputlayer[a].value = final_values[a]
-    for x in outputlayer:
-        print("final_values", x.value)
 
 
 def getcost(actual_node, expected_value):
@@ -189,11 +169,11 @@ def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
 
     for i in range(hiddenlayers):
         values = setuparrays(layer, hiddenlayer_size)
-
-        print(values)
-
-        exit()
+        apply_values(layer+1, matrix_multiply(values[0], values[1], values[2]))
+        for node in hiddenlayer:
+            print(node.value)
         layer += 1
+    print("______________")
 
 
 
@@ -206,9 +186,8 @@ inputs_array = np.array(pixels)
 
 init(1)
 for x in range(1):
-
     inputs = []
-    number = x
+    number = 2
     file = str(number) + ".png"
 
     pixels = get_image_rgb("images/", file, 32)
@@ -218,10 +197,11 @@ for x in range(1):
         inputs.append(inputnode(i, 0.2))
 
     for x in range(len(hiddenlayer)):
-        hiddenlayer[x].value = 0
+        hiddenlayer[x].value = 0 #resets hiddenlayers
+
     neuralnetwork(inputs, hiddenlayer, outputlayer)
 
     cost = getcost(outputlayer, number)
-    print(cost)
+
 
 print("code took: ", time.time() - start_time, "seconds to run")
