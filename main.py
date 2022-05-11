@@ -5,7 +5,7 @@ from PIL import Image
 import time
 
 start_time = time.time()
-np.set_printoptions(suppress=True)
+np.set_printoptions(suppress=False)
 
 
 def sigmoid(x):
@@ -37,7 +37,7 @@ def display_img(pixels):
 
 
 hiddenlayer_size = 15  # size of a hidden layer
-hiddenlayers = 3  # amount of hidden layers
+hiddenlayers = 5  # amount of hidden layers
 
 
 class inputnode:
@@ -122,53 +122,6 @@ def lastlayer(hiddenlayer_values, hiddenlayer_weights):
         print("final_values", x.value)
 
 
-def matrixMultiply(layer, hiddenlayer, lastlayer):
-    previous_values = np.array([0.0 for i in range(round((len(hiddenlayer) - hiddenlayer_size) / hiddenlayers))])
-
-    final_values = []
-    ordered_weights = []
-
-    if lastlayer == False:
-        weights = np.array(
-            [[0.0 for i in range(hiddenlayer_size)] for i in
-             range(round((len(hiddenlayer) - hiddenlayer_size) / hiddenlayers))])
-    else:
-        weights = np.array(
-            [[0.0 for i in range(10)] for i in range(20)])
-
-    bias = np.array([0.0 for i in range(round((len(hiddenlayer) - hiddenlayer_size) / hiddenlayers))])
-
-    for node in hiddenlayer:
-        if node.layer == layer:
-            try:
-                weights[node.position] = node.weight
-                previous_values[node.position] = node.value
-            except:
-                print("")
-
-        if node.layer == layer + 1:
-            bias[node.position] = node.bias
-
-    for y in range(len(weights)):
-        for x in range(len(weights)):
-            ordered_weights.append(weights[x][y])
-
-    weights = np.array(ordered_weights)
-    weights = np.reshape(weights, (hiddenlayer_size, hiddenlayer_size))
-
-    values = np.dot(weights, previous_values)  # columns(1) must equal rows(2)
-    values = np.add(values, bias)
-    for x in values:
-        final_values.append(sigmoid(x))
-
-    i = 0
-    for node in hiddenlayer:
-        if node.layer == layer + 1:
-            node.value = final_values[i]
-            i += 1
-    # reshapes everything so that its ready for matrix multiplication
-
-
 def getcost(actual_node, expected_value):
     running_total = 0
     actual_values = []
@@ -182,25 +135,37 @@ def getcost(actual_node, expected_value):
     return running_total
 
 
-def new_matrix_multiMultiply(value, weights, bias):
+def matrix_multiply(value, weights, bias):
     final_values = []
     values = np.dot(weights, value)  # columns(1) must equal rows(2)
     values = np.add(values, bias)
     for i in values:
         final_values.append(sigmoid(i))
-    print(final_values)
     return final_values
 
 def setuparrays(layer, num_of_next_weights):
     bias = np.array([0.0 for i in range(num_of_next_weights)])
-    values = np.array[0.0 for i in range(hiddenlayer_size)]
-    weights = np.array([hiddenlayer[i].value for i, a in enumerate(hiddenlayer)]) #ended here
+    values = np.array([0.0 for i in range(hiddenlayer_size)])
 
+    temp_weights = np.array([a.weight for i, a in enumerate(hiddenlayer) if a.layer == layer]) #ended here
+    weights = []
     for node in hiddenlayer:
         if node.layer == layer:
             values[node.position] = node.value
+        if node.layer == (layer+1):
+            bias[node.position] = node.bias
 
+    for x in range(num_of_next_weights):
+        for y in range(hiddenlayer_size):
+            weights.append(temp_weights[y][x])
+    weights = np.reshape(weights, (num_of_next_weights, hiddenlayer_size))
 
+    return values, weights, bias
+
+def apply_values(layer, final_values):
+    for node in hiddenlayer:
+        if node.layer == layer:
+            node.value = final_values[node.position]
 
 def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
     layer = 0
@@ -216,26 +181,21 @@ def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
         for y in range(1024):
             weights.append(temp_weights[y][x])
     weights = np.reshape(weights, (hiddenlayer_size, 1024))
-    all_values = new_matrix_multiMultiply(input_values, weights, bias)
-    print(all_values)
+    all_values = matrix_multiply(input_values, weights, bias)
+    apply_values(0, all_values)
+    for node in hiddenlayer:
+        print(node.value)
 
 
     for i in range(hiddenlayers):
+        values = setuparrays(layer, hiddenlayer_size)
+
+        print(values)
+
+        exit()
         layer += 1
-        setuparrays(layer)
 
 
-
-    for x in hiddenlayer:
-        if len(x.weight) == 10:
-            last_hiddenlayer.append(x)  # last hidden layer
-
-    weights = []
-    values = []
-    for item in last_hiddenlayer:
-        weights.append(item.weight)
-        values.append(item.value)
-    lastlayer(values, weights)
 
 
 number = 2
