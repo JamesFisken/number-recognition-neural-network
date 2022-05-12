@@ -5,8 +5,7 @@ from PIL import Image
 import time
 
 start_time = time.time()
-
-np.set_printoptions(suppress=True)
+np.set_printoptions(suppress=False)
 
 
 def sigmoid(x):
@@ -35,16 +34,17 @@ def display_img(pixels):
 
 
 # neural network starts here
-pixels = get_image_rgb("images/", "2.png", 32)
-inputs_array = np.array(pixels)
 
-hiddenlayer_size = 20  # size of a hidden layer
+
+hiddenlayer_size = 15  # size of a hidden layer
 hiddenlayers = 5  # amount of hidden layers
 
 
 class inputnode:
-    def __init__(self, value):
-        self.weight = [round(random.uniform(-1.0, 1.0), 2) for i in range(
+    def __init__(self, value, variability):
+        self.variability = variability
+
+        self.weight = [round(random.uniform(self.variability * -1, self.variability), 2) for i in range(
             hiddenlayer_size)]  # sets a random weight(-1.00, 1.00) for all the synapses spreading out from the input node
 
         self.value = value
@@ -55,12 +55,15 @@ class inputnode:
 class hiddenlayernode:
     position = 0
 
-    def __init__(self, layer, position):
+    def __init__(self, layer, position, nextweights, variability):
+        self.variability = variability
+
         self.layer = layer  # is set to the hidden layer that the neuron is located in
         self.position = position  # is set to the position of a neuron in a dedicated layer
+        self.nextweights = nextweights
 
-        self.weight = [round(random.uniform(-0.5, 0.5), 2) for i in range(hiddenlayer_size)]
-        self.bias = round(random.uniform(-0.5, 0.5), 2)
+        self.weight = [round(random.uniform(self.variability * -1, self.variability), 2) for i in range(nextweights)]
+        self.bias = round(random.uniform(self.variability * -1, self.variability), 2)
 
         self.value = 0  # math will determine this
 
@@ -75,119 +78,135 @@ class outputnode:
         self.type = "outputnode"
 
 
-def init():
-    global inputs, hiddenlayer, outputlayer
+def init(cost):
+    global inputs, hiddenlayer, outputlayer, last_hiddenlayer
     inputs = []  # holds all iterations of the inputnode class and with that their weights
     hiddenlayer = []  # holds all iterations of the hiddenlayernode class
     outputlayer = []  # holds all iterations of the outputnode class
 
     for i in inputs_array: inputs.append(
-        inputnode(i))  # creates all input neurons as an instance of the inputnode class and adds them to a list
+        inputnode(i, cost))  # creates all input neurons as an instance of the inputnode class and adds them to a list
 
     for x in range(hiddenlayers):
         for y in range(hiddenlayer_size):
-            hiddenlayer.append(hiddenlayernode(x, y))
+            hiddenlayer.append(hiddenlayernode(x, y, hiddenlayer_size, cost))
+
+    for y in range(hiddenlayer_size):
+        hiddenlayer.append(
+            hiddenlayernode(hiddenlayers, y, 10, cost))  # prepares a hiddenlayer that only gives out 10 weights for the
 
     for i in range(10):  # getting all digits 1-10
         outputlayer.append(outputnode(i))
 
 
-def matrixMultiply(layer, hiddenlayer):
+def getcost(actual_node, expected_value):
+    running_total = 0
+    actual_values = []
+    for node in actual_node:
+        actual_values.append(node.value)
+    for a, i in enumerate(actual_values):
+        if a == expected_value:
+            running_total += (i - 1) ** 2
+        else:
+            running_total += (i - 0) ** 2
+    return running_total
 
-    previous_values = np.array([0.0 for i in range(round((len(hiddenlayer)) / hiddenlayers))])
 
+def matrix_multiply(value, weights, bias):
     final_values = []
-    ordered_weights = []
-    weights = np.array(
-        [[0.0 for i in range(hiddenlayer_size)] for i in range(round((len(hiddenlayer)) / hiddenlayers))])
-    bias = np.array([0.0 for i in range(round((len(hiddenlayer)) / hiddenlayers))])
+    values = np.dot(weights, value)  # columns(1) must equal rows(2)
+    values = np.add(values, bias)
+    for i in values:
+        final_values.append(sigmoid(i))
+    return final_values
 
+
+def setuparrays(layer, num_of_next_weights):
+    bias = np.array([0.0 for i in range(num_of_next_weights)])
+    values = np.array([0.0 for i in range(hiddenlayer_size)])
+
+    temp_weights = np.array([a.weight for i, a in enumerate(hiddenlayer) if a.layer == layer])  # ended here
+    weights = []
     for node in hiddenlayer:
         if node.layer == layer:
-            weights[node.position] = node.weight  # this needs to be node.weight
-            previous_values[node.position] = node.value
-
-        if node.layer == layer + 1:
+            values[node.position] = node.value
+        if node.layer == (layer + 1):
             bias[node.position] = node.bias
 
-    print(previous_values)
+    for x in range(num_of_next_weights):
+        for y in range(hiddenlayer_size):
+            weights.append(temp_weights[y][x])
+    weights = np.reshape(weights, (num_of_next_weights, hiddenlayer_size))
 
-    for y in range(len(weights)):
-        for x in range(len(weights)):
-            ordered_weights.append(weights[x][y])
-
-
-    weights = np.array(ordered_weights)
-    weights = np.reshape(weights, (hiddenlayer_size, hiddenlayer_size))
+    return values, weights, bias
 
 
-    values = np.dot(weights, previous_values)  # columns(1) must equal rows(2)
-    values = np.add(values, bias)
-    for x in values:
-        final_values.append(sigmoid(x))
-    print("")
-    print("layer: ", layer, final_values)
-    i = 0
+def apply_values(layer, final_values):
     for node in hiddenlayer:
-        if node.layer == layer+1:
-
-            node.value = final_values[i]
-            i += 1
-
-    # reshapes everything so that its ready for matrix multiplication
+        if node.layer == layer:
+            node.value = final_values[node.position]
 
 
 def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
     layer = 0
-    weights_temp = []
-    final_values = []
-    bias = []
-    for x in range(len(inputlayer)):
-        for y in range(len(inputlayer[x].weight)):
-            weights_temp.append(inputlayer[x].weight[y])
+    bias = np.array([hiddenlayer[i].bias for i in range(hiddenlayer_size)])
+    input_values = np.array(
+        [inputlayer[i].value for i, a in enumerate(inputlayer)])  # creates an array with all the input layer values
+
+    temp_weights = np.array(
+        [inputlayer[i].weight for i, a in enumerate(inputlayer)])
+
+    weights = []
+    for x in range(hiddenlayer_size):
+        for y in range(len(inputlayer)):
+            weights.append(temp_weights[y][x])
+    weights = np.reshape(weights, (hiddenlayer_size, len(inputlayer)))
+    all_values = matrix_multiply(input_values, weights, bias)
+    apply_values(0, all_values)
     for node in hiddenlayer:
-        if node.layer == layer:
-            bias.append(node.bias)
+        print(node.value)
 
-    inputs = np.array([inputlayer[i].value for i in range(len(inputlayer))])
-    weights = np.array(weights_temp)
-    bias = np.array(bias)
-
-    bias = np.reshape(bias, (20, 1))  # reshapes everything so that its ready for matrix multiplication
-    weights = np.reshape(weights, (20, 1024))
-    inputs = np.reshape(inputs, (1024, 1))
-
-    values = np.matmul(weights, inputs)  # columns(1) must equal rows(2)
-    values = np.add(values, bias)
-    for x in values:
-        final_values.append(sigmoid(x))
-    print(final_values)
-
-    for x, i in enumerate(final_values):
-        hiddenlayer[x].value = i
-
-    for i in range(hiddenlayers-1):
+    for i in range(hiddenlayers):
+        values = setuparrays(layer, hiddenlayer_size)
+        apply_values(layer + 1, matrix_multiply(values[0], values[1], values[2]))
         for node in hiddenlayer:
             print(node.value)
-        matrixMultiply(layer, hiddenlayer)
         layer += 1
+    print("______________")
+
+    values = setuparrays(layer, 10)
+    output = matrix_multiply(values[0], values[1], values[2])
+    print(output)
+
+    for i, node in enumerate(outputlayer):
+        node.value = output[i]
+    for node in outputlayer:
+        print(node.value)
 
 
+number = 2
+file = str(number) + ".png"
 
+pixels = get_image_rgb("images/", file, 32)
+inputs_array = np.array(pixels)
 
-init()
-neuralnetwork(inputs, hiddenlayer, outputlayer)
+init(1)
+for x in range(1):
+    inputs = []
+    number = 2
+    file = str(number) + ".png"
 
-# ---- bug testing ----
-# for i in range(len(inputs)):
-# print(inputs[i].type, i, inputs[i].weight) #prints all inputs and the weights of their synapses
+    pixels = get_image_rgb("images/", file, 32)
+    inputs_array = np.array(pixels)
 
-# for i in range(len(hiddenlayer)):
-# print(hiddenlayer[i].type, "layer: ", hiddenlayer[i].layer, "position: ", hiddenlayer[i].position, hiddenlayer[i].weight) #prints all hiddenlayer nodes and their relevant infomation
+    for i in inputs_array:
+        inputs.append(inputnode(i, 0.2))
 
-# for i in range(len(outputlayer)):
-# print(outputlayer[i].type, outputlayer[i].number, outputlayer[i].value) #prints all outputs and their values
+    for x in range(len(hiddenlayer)):
+        hiddenlayer[x].value = 0  # resets hiddenlayers
 
+    neuralnetwork(inputs, hiddenlayer, outputlayer)
 
+    cost = getcost(outputlayer, number)
 
 print("code took: ", time.time() - start_time, "seconds to run")
