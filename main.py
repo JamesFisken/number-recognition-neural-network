@@ -13,8 +13,13 @@ def sigmoid(x):
     try:
         return 1 / (1 + math.exp(-x))
     except:
-        print(x)
-        exit()
+        if x < -500:
+            return 0
+        elif x > 500:
+            return 1
+        else:
+            print(x)
+            exit()
 
 
 def get_image_rgb(folder, file, res):
@@ -40,8 +45,9 @@ def display_img(pixels):
 
 # neural network starts here
 
-
-hiddenlayer_size = 50  # size of a hidden layer
+evolution_sample_size = 10
+generations = 100
+hiddenlayer_size = 30  # size of a hidden layer
 hiddenlayers = 5  # amount of hidden layers
 
 
@@ -200,61 +206,66 @@ def neuralnetwork(inputlayer, hiddenlayer, outputlayer):
     return getcost(outputlayer, label), outputlayer
 
 
+best_results = 10 #set to a impossibly high cost
+pixels, label = MnistDataSet.get_image(0) #gets pixels of a singular image and its label
+init(0, pixels) #creates an empty neural network
+adjust_modifiers(inputs, hiddenlayer, 1) #gives NN weights and bias variability
 
-num = 1
-pixels, label = MnistDataSet.get_image(num)
-
-init(1, pixels)
-adjust_modifiers(inputs, hiddenlayer, 1)
-
-neuralnetwork(inputs, hiddenlayer, outputlayer)
-
+#saves the structure of the NN just made
 save_weights = [node.weight for node in hiddenlayer]
 save_input_weights = [node.weight for node in inputs]
 save_bias = [node.bias for node in hiddenlayer]
 
-best_NN = []
-results = []
-best_results = 10
-cost = 0
-for x in range(10000):
-    numbers = [random.randint(0, 10000) for y in range(30)]
 
-    for o, num in enumerate(numbers):
+F_results = 0 #so that nothing changes at the start
+for x in range(generations):
+    numbers = [random.randint(0, 10000) for y in range(evolution_sample_size)]  #gets a set of random numbers
+    results = []
 
+    current_save_weights = save_weights.copy()
+    current_save_input_weights = save_input_weights.copy()
+    current_save_bias = save_bias.copy()
 
-        pixels, label = MnistDataSet.get_image(num)
+    for x, weights in enumerate(current_save_input_weights):
+        for y, weight in enumerate(weights):
+            current_save_input_weights[x][y] += random.uniform(best_results * -5, best_results*5)
 
-        init(0, pixels)
+    for x, weights in enumerate(current_save_weights):
+        for y, weight in enumerate(weights):
+            current_save_weights[x][y] += random.uniform(best_results * -5, best_results*5)
 
-        for i, node in enumerate(hiddenlayer):
-            node.weight = save_weights[i]
-            node.bias = save_bias[i]
+    for i in range(len(current_save_bias)):
+        current_save_bias[i] += random.uniform(best_results * -5, best_results*5)
+
+    score = 0
+    for num in numbers: #for every number in the set
+        pixels, label = MnistDataSet.get_image(num)  # set pixels and labels to their corisponding number from MNIST
+        init(0, pixels)  # reset all list containing nodes
+
+        for i, node in enumerate(hiddenlayer): #retreives saved weights and bias
+            node.weight = current_save_weights[i]
+            node.bias = current_save_bias[i]
         for i, node in enumerate(inputs):
-            node.weight = save_input_weights[i]
-
+            node.weight = current_save_input_weights[i]
+        #adjust_modifiers(inputs, hiddenlayer, 1) # this needs to be locked for each generation
 
         cost, output = neuralnetwork(inputs, hiddenlayer, outputlayer)
+        output_num = [output[i].value for i in range(len(output))]
+
+        if output_num.index(max(output_num)) == label:
+            score += 1
+        else:
+            score -= 1
         results.append(cost)
-    final_results = (sum(results) / len(results))
-
-
-    if final_results < best_results:
-        print("new best: ", final_results, )
-        best_results = final_results
+    print(score)
+    F_results = (sum(results)/len(results))
+    if F_results < best_results:
+        print("new best:", F_results)
+        best_results = F_results
         save_weights = [node.weight for node in hiddenlayer]
         save_input_weights = [node.weight for node in inputs]
         save_bias = [node.bias for node in hiddenlayer]
-
-
-
-    else:
-        print("fail: ", final_results, best_results)
-        adjust_modifiers(inputs, hiddenlayer, cost * 0.1)
-
-
-    print(save_bias[0])
-
+    print("fail:", F_results)
 
 
 print("code took: ", time.time() - start_time, "seconds to run")
